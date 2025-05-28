@@ -1,131 +1,90 @@
--- Services
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
-local Camera = workspace.CurrentCamera
+local RauzitoHub = {
+    ESP = false,
+    Aimlock = false,
+    WallCheck = false,
+    TeamCheck = true,
+    AimFOV = 50, -- Grau de campo de visão do aimlock
+}
 
-local LocalPlayer = Players.LocalPlayer
-local Mouse = LocalPlayer:GetMouse()
+-- Função que simula o desenho do círculo do Aim FOV no console
+function DrawAimFOVCircle()
+    local radius = math.floor(RauzitoHub.AimFOV / 10)  -- escala para console
+    local diameter = radius * 2 + 1
 
--- Configuration
-local ESPEnabled = false
-local AimlockEnabled = false
-local FlyEnabled = false
-local AimlockKey = Enum.KeyCode.Q -- Aimlock toggle
-local FlyKey = Enum.KeyCode.F -- Fly toggle
-
--- UI Setup
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "ESP_Aimbot_UI"
-ScreenGui.Parent = game.CoreGui -- Coloca no CoreGui para não sumir ao morrer
-
-local Frame = Instance.new("Frame")
-Frame.Position = UDim2.new(0, 10, 0, 100)
-Frame.Size = UDim2.new(0, 160, 0, 120)
-Frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-Frame.BackgroundTransparency = 0.5
-Frame.BorderSizePixel = 0
-Frame.Parent = ScreenGui
-Frame.Active = true
-Frame.Draggable = true
-
-local TextLabel = Instance.new("TextLabel")
-TextLabel.Size = UDim2.new(1, 0, 0, 20)
-TextLabel.BackgroundTransparency = 1
-TextLabel.Text = "ESP / Aimbot / Fly"
-TextLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-TextLabel.TextScaled = true
-TextLabel.Font = Enum.Font.GothamBold
-TextLabel.Parent = Frame
-
-local function createToggle(name, position)
-    local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(0, 140, 0, 25)
-    btn.Position = position
-    btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    btn.Font = Enum.Font.Gotham
-    btn.TextScaled = true
-    btn.Text = name .. ": OFF"
-    btn.Parent = Frame
-    return btn
-end
-
-local ESPButton = createToggle("ESP", UDim2.new(0, 10, 0, 30))
-local AimlockButton = createToggle("Aimlock", UDim2.new(0, 10, 0, 60))
-local FlyButton = createToggle("Fly", UDim2.new(0, 10, 0, 90))
-
-ESPButton.MouseButton1Click:Connect(function()
-    ESPEnabled = not ESPEnabled
-    ESPButton.Text = "ESP: " .. (ESPEnabled and "ON" or "OFF")
-end)
-
-AimlockButton.MouseButton1Click:Connect(function()
-    AimlockEnabled = not AimlockEnabled
-    AimlockButton.Text = "Aimlock: " .. (AimlockEnabled and "ON" or "OFF")
-end)
-
-FlyButton.MouseButton1Click:Connect(function()
-    FlyEnabled = not FlyEnabled
-    FlyButton.Text = "Fly: " .. (FlyEnabled and "ON" or "OFF")
-end)
-
--- Wall Check Function
-local function hasLineOfSight(origin, targetPos)
-    local ray = Ray.new(origin, (targetPos - origin).Unit * 1000)
-    local hit, pos = workspace:FindPartOnRay(ray, LocalPlayer.Character, false, true)
-    if hit then
-        local distToTarget = (targetPos - origin).Magnitude
-        local distToHit = (pos - origin).Magnitude
-        return distToHit >= distToTarget - 2 -- tolerância pequena
-    end
-    return true
-end
-
--- ESP Implementation
-local espObjects = {}
-
-local function createESPBox()
-    local box = Drawing.new("Square")
-    box.Visible = false
-    box.Transparency = 1
-    box.Thickness = 2
-    box.Color = Color3.new(1, 0, 0)
-    box.Filled = false
-    box.ZIndex = 10
-    return box
-end
-
-local function isEnemy(player)
-    if not player or not player.Character or not player.Character:FindFirstChild("Humanoid") then
-        return false
-    end
-    local lpTeam = LocalPlayer.Team
-    local plTeam = player.Team
-    if lpTeam and plTeam and lpTeam == plTeam then
-        return false
-    end
-    return player ~= LocalPlayer
-end
-
-local function updateESP()
-    for _, player in pairs(Players:GetPlayers()) do
-        if isEnemy(player) then
-            if not espObjects[player] then
-                espObjects[player] = createESPBox()
+    for y = -radius, radius do
+        local line = ""
+        for x = -radius, radius do
+            local dist = math.sqrt(x*x + y*y)
+            if math.abs(dist - radius) < 0.7 then
+                line = line .. "*"
+            else
+                line = line .. " "
             end
-            local box = espObjects[player]
-            local char = player.Character
-            local rootPart = char and char:FindFirstChild("HumanoidRootPart")
-            local head = char and char:FindFirstChild("Head")
-            if rootPart and head then
-                local rootPos, onScreen1 = Camera:WorldToViewportPoint(rootPart.Position)
-                local headPos, onScreen2 = Camera:WorldToViewportPoint(head.Position)
-                if onScreen1 and onScreen2 then
-                    local height = math.abs(headPos.Y - rootPos.Y)
-                    local width = height / 2
-                    box.Visible = ESPEnabled
-                    box.Size = Vector2.new(width, height)
-                    box.Position = Vector2.new(rootPos.X - width/2, rootPos.Y - height/2)
-                else
-                    box.Visible =
+        end
+        print(line)
+    end
+    print("Aim FOV Circle (approx radius: " .. RauzitoHub.AimFOV .. " degrees)")
+end
+
+-- Função de renderização da interface
+function DrawRauzitoHub()
+    -- Título
+    print("====== Rauzito Hub ======")
+
+    -- ESP Toggle
+    print("1. ESP: " .. (RauzitoHub.ESP and "ON" or "OFF"))
+
+    -- Aimlock Toggle
+    print("2. Aimlock: " .. (RauzitoHub.Aimlock and "ON" or "OFF"))
+
+    -- WallCheck Toggle
+    print("3. WallCheck: " .. (RauzitoHub.WallCheck and "ON" or "OFF"))
+
+    -- TeamCheck Toggle
+    print("4. Team Check: " .. (RauzitoHub.TeamCheck and "ON" or "OFF"))
+
+    -- Aim FOV Slider
+    print("5. Aim FOV: " .. RauzitoHub.AimFOV)
+
+    -- Desenha o círculo do Aim FOV
+    DrawAimFOVCircle()
+
+    print("6. Sair")
+    print("==========================")
+end
+
+-- Função para alternar os estados
+function ToggleOption(option)
+    if option == 1 then
+        RauzitoHub.ESP = not RauzitoHub.ESP
+    elseif option == 2 then
+        RauzitoHub.Aimlock = not RauzitoHub.Aimlock
+    elseif option == 3 then
+        RauzitoHub.WallCheck = not RauzitoHub.WallCheck
+    elseif option == 4 then
+        RauzitoHub.TeamCheck = not RauzitoHub.TeamCheck
+    elseif option == 5 then
+        print("Defina o novo Aim FOV (10-180): ")
+        local input = tonumber(io.read())
+        if input and input >= 10 and input <= 180 then
+            RauzitoHub.AimFOV = input
+        else
+            print("Valor inválido!")
+        end
+    end
+end
+
+-- Loop principal da interface
+while true do
+    DrawRauzitoHub()
+
+    print("Escolha uma opção (1-6): ")
+    local choice = tonumber(io.read())
+
+    if choice == 6 then
+        print("Fechando Rauzito Hub...")
+        break
+    else
+        ToggleOption(choice)
+    end
+end
